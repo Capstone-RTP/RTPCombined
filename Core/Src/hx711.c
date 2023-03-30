@@ -128,7 +128,7 @@ float hx711_weight(hx711_t *hx711, uint16_t sample)
     hx711_delay(5);
   }
   int32_t data = (int32_t)(ave / sample);
-  float answer =  (data - hx711->offset) / hx711->coef;
+  float answer = (data - hx711->offset) / hx711->coef;
   hx711_unlock(hx711);
   return answer;
 }

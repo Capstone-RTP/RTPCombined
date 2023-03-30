@@ -47,6 +47,7 @@ I2C_HandleTypeDef hi2c2;
 
 UART_HandleTypeDef hlpuart1;
 
+TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
@@ -75,6 +76,7 @@ static void MX_LPUART1_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -124,6 +126,7 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 	__HAL_TIM_ENABLE_IT(&htim3, TIM_IT_UPDATE);
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
@@ -157,6 +160,11 @@ int main(void)
 	//Start timer for uSDelay for HX711
 	HAL_TIM_Base_Start(&htim5);
 
+	//Init load cell
+	hx711_t loadCell;
+	uint32_t pressureVal;
+
+	hx711_init(&loadCell, loadCLK_GPIO_Port, loadCLK_Pin, loadDATA_GPIO_Port, loadDATA_Pin, &htim5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -170,15 +178,26 @@ int main(void)
 		//		if((HAL_GetTick()-timer>=5000) && (HAL_GetTick()-timer<=5180)){
 		//			setTarget(&yMotor, 1000, 0);
 		//		}
+		//		timer = HAL_GetTick();
+		//		VL53L0X_PerformSingleRangingMeasurement(Dev, &RangingData);
+		//		  if(RangingData.RangeStatus == 0)
+		//		  {
+		//			  MessageLen = sprintf((char*)Message, "Measured distance: %i ", RangingData.RangeMilliMeter);
+		//			  HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+		//			  MessageLen = sprintf((char*)Message, " Measure Time: %d\n\r",(int)(HAL_GetTick()-timer));
+		//			  HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+		//		  }
+
+
 		timer = HAL_GetTick();
-		VL53L0X_PerformSingleRangingMeasurement(Dev, &RangingData);
-		  if(RangingData.RangeStatus == 0)
-		  {
-			  MessageLen = sprintf((char*)Message, "Measured distance: %i ", RangingData.RangeMilliMeter);
-			  HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
-			  MessageLen = sprintf((char*)Message, " Measure Time: %d\n\r",(int)(HAL_GetTick()-timer));
-			  HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
-		  }
+		pressureVal = hx711_value(&loadCell);
+		timer = HAL_GetTick()-timer;
+
+		MessageLen = sprintf((char*)Message, "Load: %i ",(int)pressureVal);
+		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+		MessageLen = sprintf((char*)Message, " Measure Time: %d\n\r",(int)(timer));
+		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -329,6 +348,53 @@ static void MX_LPUART1_UART_Init(void)
   /* USER CODE BEGIN LPUART1_Init 2 */
 
   /* USER CODE END LPUART1_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 65535;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -574,12 +640,28 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, thetaDir_Pin|yDir_Pin|rDir_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(loadCLK_GPIO_Port, loadCLK_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : thetaDir_Pin yDir_Pin rDir_Pin */
   GPIO_InitStruct.Pin = thetaDir_Pin|yDir_Pin|rDir_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : loadCLK_Pin */
+  GPIO_InitStruct.Pin = loadCLK_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(loadCLK_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : loadDATA_Pin */
+  GPIO_InitStruct.Pin = loadDATA_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(loadDATA_GPIO_Port, &GPIO_InitStruct);
 
 }
 

@@ -65,6 +65,10 @@ void Error_Handler(void);
 #define yDir_GPIO_Port GPIOA
 #define rDir_Pin GPIO_PIN_7
 #define rDir_GPIO_Port GPIOA
+#define loadCLK_Pin GPIO_PIN_8
+#define loadCLK_GPIO_Port GPIOD
+#define loadDATA_Pin GPIO_PIN_9
+#define loadDATA_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
