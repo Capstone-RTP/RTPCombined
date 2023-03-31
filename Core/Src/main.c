@@ -57,6 +57,7 @@ TIM_HandleTypeDef htim5;
 stepper thetaMotor;
 stepper yMotor;
 stepper rMotor;
+char doOnceFlag=0;
 
 uint8_t Message[64];
 uint8_t MessageLen;
@@ -64,6 +65,8 @@ uint8_t MessageLen;
 VL53L0X_RangingMeasurementData_t RangingData;
 VL53L0X_Dev_t  vl53l0x_c; // center module
 VL53L0X_DEV    Dev = &vl53l0x_c;
+
+hx711_t loadCell;
 
 /* USER CODE END PV */
 
@@ -133,9 +136,9 @@ int main(void)
 	__HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
 
 	//Initialize stepper structures
-	initStepper(&thetaMotor, &htim3, TIM_CHANNEL_1, thetaDir_GPIO_Port, thetaDir_Pin, 800);
-	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 600);
-	initStepper(&thetaMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 800);
+	initStepper(&thetaMotor, &htim3, TIM_CHANNEL_1, thetaDir_GPIO_Port, thetaDir_Pin, 400);
+	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 800);
+	initStepper(&rMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 200);
 
 	//I2C assignment to TOF API
 	Dev->I2cHandle = &hi2c2;
@@ -160,15 +163,28 @@ int main(void)
 	//Start timer for uSDelay for HX711
 	HAL_TIM_Base_Start(&htim5);
 
-	//Init load cell
-	hx711_t loadCell;
-	uint32_t pressureVal;
+	HAL_Delay(1000);
+	setTarget(&thetaMotor, 1000, 1);
 
-	hx711_init(&loadCell, loadCLK_GPIO_Port, loadCLK_Pin, loadDATA_GPIO_Port, loadDATA_Pin, &htim5);
+
+	//Init load cell
+
+//	uint32_t pressureVal;
+//	uint32_t pressureZero;
+//
+//	MessageLen = sprintf((char*)Message, "Here 1 \n\r");
+//	HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+//
+//	hx711_init(&loadCell, loadCLK_GPIO_Port, loadCLK_Pin, loadDATA_GPIO_Port, loadDATA_Pin, &htim5);
+//	MessageLen = sprintf((char*)Message, "Here 2 \n\r");
+//	HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+//	HAL_Delay(200);
+//	pressureZero = hx711_value_ave(&loadCell, 5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	timer = HAL_GetTick();
 	while (1)
 	{
 		//		HAL_Delay(100);
@@ -189,15 +205,29 @@ int main(void)
 		//		  }
 
 
-		timer = HAL_GetTick();
-		pressureVal = hx711_value(&loadCell);
-		timer = HAL_GetTick()-timer;
+//		timer = HAL_GetTick();
+//		pressureVal = hx711_value(&loadCell);
+//		timer = HAL_GetTick()-timer;
+//
+//
+//
+//		MessageLen = sprintf((char*)Message, "Load: %i ",(int)(pressureVal-pressureZero));
+//		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 
-		MessageLen = sprintf((char*)Message, "Load: %i ",(int)pressureVal);
-		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
-		MessageLen = sprintf((char*)Message, " Measure Time: %d\n\r",(int)(timer));
+
+		if((HAL_GetTick()-timer)>5000 && !doOnceFlag){
+			setTarget(&thetaMotor, 1000, 0);
+			doOnceFlag = 1;
+		}
+
+		MessageLen = sprintf((char*)Message, " Current: %d ",(int)(thetaMotor.CurrentPosition));
 		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 
+		MessageLen = sprintf((char*)Message, "Target: %d\n\r ",(int)(thetaMotor.TargetPosition));
+		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+
+
+		HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -513,9 +543,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
-
 }
-
 /**
   * @brief TIM4 Initialization Function
   * @param None
@@ -671,8 +699,6 @@ void  HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
 	if(htim == &htim3){
 		if(thetaMotor.Status == RunningForward){
 			thetaMotor.CurrentPosition++;
-			MessageLen = sprintf((char*)Message, "here2");
-			HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 		}
 		else if (thetaMotor.Status == RunningBackward){
 			thetaMotor.CurrentPosition--;
