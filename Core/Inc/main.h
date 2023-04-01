@@ -69,6 +69,8 @@ void Error_Handler(void);
 #define loadCLK_GPIO_Port GPIOD
 #define loadDATA_Pin GPIO_PIN_9
 #define loadDATA_GPIO_Port GPIOD
+#define tofXSHUT_Pin GPIO_PIN_15
+#define tofXSHUT_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
