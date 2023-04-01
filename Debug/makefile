@@ -62,8 +62,8 @@ all: main-build
 main-build: RTPCombined.elf secondary-outputs
 
 # Tool invocations
-RTPCombined.elf RTPCombined.map: $(OBJS) $(USER_OBJS) C:\Code\STM32\RTPCombined\STM32L4P5ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "RTPCombined.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Code\STM32\RTPCombined\STM32L4P5ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RTPCombined.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+RTPCombined.elf RTPCombined.map: $(OBJS) $(USER_OBJS) C:\Users\kylei\STM32CubeIDE\workspace1\RTPCombined\STM32L4P5ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "RTPCombined.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\kylei\STM32CubeIDE\workspace1\RTPCombined\STM32L4P5ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="RTPCombined.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

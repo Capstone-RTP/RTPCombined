@@ -25,6 +25,7 @@
 #include "stepperControl.h"
 #include "vl53l0x_api.h"
 #include "hx711.h"
+#include "modeSelect.h"
 
 /* USER CODE END Includes */
 
@@ -543,7 +544,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 2 */
   HAL_TIM_MspPostInit(&htim3);
+
 }
+
 /**
   * @brief TIM4 Initialization Function
   * @param None
@@ -677,6 +680,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : modeStandby_Pin modeTattoo_Pin modeScanning_Pin modeZeroing_Pin */
+  GPIO_InitStruct.Pin = modeStandby_Pin|modeTattoo_Pin|modeScanning_Pin|modeZeroing_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : loadCLK_Pin */
   GPIO_InitStruct.Pin = loadCLK_Pin;

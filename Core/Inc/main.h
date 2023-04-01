@@ -65,6 +65,14 @@ void Error_Handler(void);
 #define yDir_GPIO_Port GPIOA
 #define rDir_Pin GPIO_PIN_7
 #define rDir_GPIO_Port GPIOA
+#define modeStandby_Pin GPIO_PIN_10
+#define modeStandby_GPIO_Port GPIOE
+#define modeTattoo_Pin GPIO_PIN_12
+#define modeTattoo_GPIO_Port GPIOE
+#define modeScanning_Pin GPIO_PIN_14
+#define modeScanning_GPIO_Port GPIOE
+#define modeZeroing_Pin GPIO_PIN_15
+#define modeZeroing_GPIO_Port GPIOE
 #define loadCLK_Pin GPIO_PIN_8
 #define loadCLK_GPIO_Port GPIOD
 #define loadDATA_Pin GPIO_PIN_9
