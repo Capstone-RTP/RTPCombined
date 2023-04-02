@@ -32,7 +32,7 @@ void setTarget (stepper * stepper, uint64_t increment, char forward){
 		stepper->TargetPosition=0;
 	}
 	//Start timer if it needs to be started
-	if (stepper->Status == Stopped){
+	if (stepper->Status == Stopped && stepper->TargetPosition != stepper->CurrentPosition){
 		//start pulses on timer
 		HAL_TIM_PWM_Start(stepper->Timer, stepper->Channel);
 	}
@@ -55,7 +55,7 @@ void setDirection(stepper *stepper){
 		HAL_GPIO_WritePin(stepper->DIRPort, stepper->DIRPin, SET);
 		stepper->Status = RunningBackward;
 	}
-	else{
+	else if(stepper->CurrentPosition < stepper->TargetPosition){
 		HAL_GPIO_WritePin(stepper->DIRPort, stepper->DIRPin, RESET);
 		stepper->Status = RunningForward;
 	}

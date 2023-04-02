@@ -65,12 +65,18 @@ void Error_Handler(void);
 #define yDir_GPIO_Port GPIOA
 #define rDir_Pin GPIO_PIN_7
 #define rDir_GPIO_Port GPIOA
+#define state3LED_Pin GPIO_PIN_14
+#define state3LED_GPIO_Port GPIOB
 #define loadCLK_Pin GPIO_PIN_8
 #define loadCLK_GPIO_Port GPIOD
 #define loadDATA_Pin GPIO_PIN_9
 #define loadDATA_GPIO_Port GPIOD
 #define tofXSHUT_Pin GPIO_PIN_15
 #define tofXSHUT_GPIO_Port GPIOD
+#define state1LED_Pin GPIO_PIN_7
+#define state1LED_GPIO_Port GPIOC
+#define state2LED_Pin GPIO_PIN_7
+#define state2LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
