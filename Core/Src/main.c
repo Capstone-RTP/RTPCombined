@@ -27,6 +27,7 @@
 #include "vl53l0x_api.h"
 #include "hx711.h"
 #include "serialFromPC.h"
+#include "zeroing.h"
 
 /* USER CODE END Includes */
 
@@ -211,6 +212,15 @@ int main(void)
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	timer = HAL_GetTick();
+
+	//testing stopping function
+	GoHome(&yMotor);
+	//HAL_Delay(1000);
+	//setTarget(&yMotor, 1000, 1);
+	//HAL_Delay(3000);
+	//setTarget(&yMotor, 500, 0);
+
+
 	while (1)
 	{
 		//		HAL_Delay(100);
@@ -231,7 +241,9 @@ int main(void)
 		//		}
 		//check if data has been received
 
-				if(scanState == posReceive && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+
+
+				/*if(scanState == posReceive && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
 					HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, SET);
 					if(uartRecievedFlag){
 						//retrieve instructions
@@ -276,7 +288,7 @@ int main(void)
 						HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, RESET);
 						scanState = posReceive;
 					}
-				}
+				}*/
 
 		//		if(uartRecievedFlag  && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
 		//			//retrieve instructions
