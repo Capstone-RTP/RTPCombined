@@ -16,6 +16,7 @@ void GoHome(stepper* motor){
 	/*make motor go backward "forever"
 	Note: make sure there is some mechanism in main()
 	to stop otherwise this will go until it breaks something*/
+	setSpeed(motor,motor->PPS_ZeroDefault);
 	setTarget(motor, 0xFFFE,0);
 }
 

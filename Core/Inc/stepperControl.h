@@ -22,6 +22,8 @@ typedef struct {
 	GPIO_TypeDef * DIRPort;
 	uint16_t DIRPin;
 	volatile uint32_t PPS;
+	volatile uint32_t PPS_ZeroDefault;
+	volatile uint32_t PPS_TattooDefault;
 	volatile uint64_t CurrentPosition;
 	volatile uint64_t TargetPosition;
 	volatile stepperStatus Status;

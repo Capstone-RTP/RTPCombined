@@ -134,6 +134,7 @@ int main(void)
 	initStepper(&thetaMotor, &htim3, TIM_CHANNEL_1, thetaDir_GPIO_Port, thetaDir_Pin, 33);
 	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 400);
 	initStepper(&rMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 400);
+	yMotor.PPS_ZeroDefault = 200;
 
 	InitSerialFromPC(&hlpuart1,rxBuffer);
 	/* USER CODE END Init */
