@@ -35,7 +35,7 @@ void setTarget (stepper * stepper, uint64_t increment, char forward);
 void setSpeed(stepper * stepper, uint32_t speed);
 void setDirection(stepper *stepper);
 void stopStepper(stepper *stepper);
-
+void zeroStepper(stepper *stepper);
 
 
 

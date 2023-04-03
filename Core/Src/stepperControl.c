@@ -67,3 +67,9 @@ void stopStepper(stepper *stepper){
 	stepper->Status = Stopped;
 	stepper->TargetPosition = stepper->CurrentPosition;
 }
+
+void zeroStepper(stepper *stepper){
+	stopStepper(stepper);
+	stepper->CurrentPosition = 0;
+	stepper->TargetPosition = 0;
+}

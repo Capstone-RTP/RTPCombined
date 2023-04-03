@@ -65,6 +65,15 @@ void Error_Handler(void);
 #define yDir_GPIO_Port GPIOA
 #define rDir_Pin GPIO_PIN_7
 #define rDir_GPIO_Port GPIOA
+#define thLim_Pin GPIO_PIN_12
+#define thLim_GPIO_Port GPIOE
+#define thLim_EXTI_IRQn EXTI15_10_IRQn
+#define yLim_Pin GPIO_PIN_14
+#define yLim_GPIO_Port GPIOE
+#define yLim_EXTI_IRQn EXTI15_10_IRQn
+#define rLim_Pin GPIO_PIN_15
+#define rLim_GPIO_Port GPIOE
+#define rLim_EXTI_IRQn EXTI15_10_IRQn
 #define state3LED_Pin GPIO_PIN_14
 #define state3LED_GPIO_Port GPIOB
 #define loadCLK_Pin GPIO_PIN_8
