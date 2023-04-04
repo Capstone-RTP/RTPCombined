@@ -22,6 +22,8 @@ typedef struct {
 	GPIO_TypeDef * DIRPort;
 	uint16_t DIRPin;
 	volatile uint32_t PPS;
+	volatile uint32_t PPS_ZeroDefault;
+	volatile uint32_t PPS_TattooDefault;
 	volatile uint64_t CurrentPosition;
 	volatile uint64_t TargetPosition;
 	volatile stepperStatus Status;
@@ -32,7 +34,8 @@ void initStepper(stepper * stepper, TIM_HandleTypeDef * tim, uint32_t  channel, 
 void setTarget (stepper * stepper, uint64_t increment, char forward);
 void setSpeed(stepper * stepper, uint32_t speed);
 void setDirection(stepper *stepper);
-
+void stopStepper(stepper *stepper);
+void zeroStepper(stepper *stepper);
 
 
 

@@ -60,3 +60,16 @@ void setDirection(stepper *stepper){
 		stepper->Status = RunningForward;
 	}
 }
+
+void stopStepper(stepper *stepper){
+	HAL_TIM_PWM_Stop(stepper->Timer, stepper->Channel);
+	HAL_TIM_Base_Stop(stepper->Timer);
+	stepper->Status = Stopped;
+	stepper->TargetPosition = stepper->CurrentPosition;
+}
+
+void zeroStepper(stepper *stepper){
+	stopStepper(stepper);
+	stepper->CurrentPosition = 0;
+	stepper->TargetPosition = 0;
+}
