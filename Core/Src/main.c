@@ -60,7 +60,10 @@ TIM_HandleTypeDef htim5;
 /* USER CODE BEGIN PV */
 
 //Mode Control
-RTP_STATUS mode;
+
+RTP_MODE rtpMode;
+ZERO_MODE zeroMode;
+uint8_t modeChangeFlag;
 
 //Stepper Control
 
@@ -108,6 +111,10 @@ static void MX_TIM1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void modeSwitch(RTP_MODE mode){
+
+}
 
 /* USER CODE END 0 */
 
@@ -220,20 +227,57 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	timer = HAL_GetTick();
 
-	//testing stopping function
-	GoHome(&thetaMotor);
-	HAL_Delay(10000);
-	GoHome(&yMotor);
-	HAL_Delay(10000);
-	GoHome(&rMotor);
-	HAL_Delay(10000);
-	//setTarget(&yMotor, 1000, 1);
-	//HAL_Delay(3000);
-	//setTarget(&yMotor, 500, 0);
-
-
 	while (1)
 	{
+		/*** STANDBY MODE ***/
+		if(rtpMode == RTP_STANDBY){
+
+		}
+
+		/*** ZEROING MODE ***/
+		else if(rtpMode == RTP_ZERO){
+			//zeroing FSM
+			switch(zeroMode){
+			case 0:
+				GoHome(&rMotor);
+				zeroMode++;
+				break;
+			case 1:
+				if(rMotor.Status == Stopped) zeroMode++;
+				break;
+			case 2:
+				GoHome(&thetaMotor);
+				zeroMode++;
+				break;
+			case 3:
+				if(thetaMotor.Status == Stopped) zeroMode++;
+				break;
+			case 4:
+				GoHome(&yMotor);
+				zeroMode++;
+				break;
+			case 5:
+				if(yMotor.Status == Stopped) zeroMode++;
+				break;
+			case 6:
+				zeroMode = 0;
+				modeSwitch(RTP_STANDBY);
+				break;
+			}
+
+		}
+
+		/*** TATTOO MODE ***/
+		else if(rtpMode == RTP_TATTOO){
+
+		}
+
+		/*** SCAN MODE ***/
+		else if(rtpMode == RTP_SCAN){
+
+		}
+
+
 		//		HAL_Delay(100);
 		//		MessageLen = sprintf((char*)Message, "Current Position: %d Target: %d \n\r",(int)yMotor.CurrentPosition,(int)yMotor.TargetPosition);
 		//		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
@@ -887,17 +931,34 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
-	//check which limit switch was hit
-	if(GPIO_Pin == rLim_Pin){
+	switch(GPIO_Pin){
+	//limit switches
+	case rLim_Pin:
 		zeroStepper(&rMotor);
-	}
-	else if(GPIO_Pin == thLim_Pin){
+		break;
+	case thLim_Pin:
 		zeroStepper(&thetaMotor);
-	}
-	else if(GPIO_Pin == yLim_Pin){
+		break;
+	case yLim_Pin:
 		zeroStepper(&yMotor);
+		break;
+	//mode pushbuttons
+	//TODO: add it so speed of motors are adjusted for mode
+	//TODO: add indicator LEDs
+	//TODO: make it so that when standby mode is activated all the other sub-FSMs are reset
+	case modeStandby_Pin:
+		rtpMode = RTP_STANDBY;
+		break;
+	case modeZero_Pin:
+		rtpMode = RTP_ZERO;
+		break;
+	case modeTattoo_Pin:
+		rtpMode = RTP_TATTOO;
+		break;
+	case modeScan_Pin:
+		rtpMode = RTP_SCAN;
+		break;
 	}
-
 
 }
 
