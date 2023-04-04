@@ -113,6 +113,42 @@ static void MX_TIM1_Init(void);
 /* USER CODE BEGIN 0 */
 
 void modeSwitch(RTP_MODE mode){
+	uint8_t ledConfig;
+
+	//reset sub FSMs
+	zeroMode = 0;
+
+	//adjust LED config and motor speed
+	switch(mode){
+	case RTP_STANDBY:
+		ledConfig = LED_CONFIG_1;
+		break;
+	case RTP_ZERO:
+		ledConfig = LED_CONFIG_2;
+		setSpeed(&rMotor, rMotor.PPS_ZeroDefault);
+		setSpeed(&thetaMotor, thetaMotor.PPS_ZeroDefault);
+		setSpeed(&yMotor, yMotor.PPS_ZeroDefault);
+		break;
+	case RTP_TATTOO:
+		ledConfig = LED_CONFIG_3;
+		setSpeed(&rMotor, rMotor.PPS_TattooDefault);
+		setSpeed(&thetaMotor, thetaMotor.PPS_TattooDefault);
+		setSpeed(&yMotor, yMotor.PPS_TattooDefault);
+		break;
+	case RTP_SCAN:
+		ledConfig = LED_CONFIG_4;
+		setSpeed(&rMotor, rMotor.PPS_ScanDefault);
+		setSpeed(&thetaMotor, thetaMotor.PPS_ScanDefault);
+		setSpeed(&yMotor, yMotor.PPS_ScanDefault);
+		break;
+	}
+
+	//write to LED
+	HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, (ledConfig >> 0) & 1);
+	HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, (ledConfig >> 1) & 1);
+	HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, (ledConfig >> 2) & 1);
+	HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, (ledConfig >> 3) & 1);
+
 
 }
 
@@ -815,6 +851,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, statusLed1_Pin|statusLed2_Pin|statusLed3_Pin|statusLed4_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, thetaDir_Pin|yDir_Pin|rDir_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -825,6 +864,13 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : statusLed1_Pin statusLed2_Pin statusLed3_Pin statusLed4_Pin */
+  GPIO_InitStruct.Pin = statusLed1_Pin|statusLed2_Pin|statusLed3_Pin|statusLed4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : thetaDir_Pin yDir_Pin rDir_Pin */
   GPIO_InitStruct.Pin = thetaDir_Pin|yDir_Pin|rDir_Pin;
@@ -943,20 +989,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		zeroStepper(&yMotor);
 		break;
 	//mode pushbuttons
-	//TODO: add it so speed of motors are adjusted for mode
-	//TODO: add indicator LEDs
-	//TODO: make it so that when standby mode is activated all the other sub-FSMs are reset
 	case modeStandby_Pin:
-		rtpMode = RTP_STANDBY;
+		modeSwitch(RTP_STANDBY);
 		break;
 	case modeZero_Pin:
-		rtpMode = RTP_ZERO;
+		modeSwitch(RTP_ZERO);
 		break;
 	case modeTattoo_Pin:
-		rtpMode = RTP_TATTOO;
+		modeSwitch(RTP_TATTOO);
 		break;
 	case modeScan_Pin:
-		rtpMode = RTP_SCAN;
+		modeSwitch(RTP_SCAN);
 		break;
 	}
 
