@@ -52,3 +52,5 @@ Mkfile.old
 dkms.conf
 *.mk
 makefile
+*.xml
+*.settings.xml
