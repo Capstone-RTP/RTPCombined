@@ -135,6 +135,8 @@ int main(void)
 	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 400);
 	initStepper(&rMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 400);
 	yMotor.PPS_ZeroDefault = 200;
+	thetaMotor.PPS_ZeroDefault = 200;
+	rMotor.PPS_ZeroDefault = 200;
 
 	InitSerialFromPC(&hlpuart1,rxBuffer);
   /* USER CODE END Init */
@@ -215,8 +217,12 @@ int main(void)
 	timer = HAL_GetTick();
 
 	//testing stopping function
+	GoHome(&thetaMotor);
+	HAL_Delay(10000);
 	GoHome(&yMotor);
-	//HAL_Delay(5000);
+	HAL_Delay(10000);
+	GoHome(&rMotor);
+	HAL_Delay(10000);
 	//setTarget(&yMotor, 1000, 1);
 	//HAL_Delay(3000);
 	//setTarget(&yMotor, 500, 0);
