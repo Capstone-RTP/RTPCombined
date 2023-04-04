@@ -15,6 +15,11 @@ void initStepper(stepper * stepper, TIM_HandleTypeDef * tim, uint32_t  channel, 
 	//update timer to align with speed
 	setSpeed(stepper, stepper->PPS);
 	//return stepper structure pointer
+
+	//set default speeds
+	stepper->PPS_ZeroDefault;
+	stepper->PPS_TattooDefault;
+	stepper->PPS_ScanDefault;
 }
 
 
@@ -47,6 +52,13 @@ void setSpeed (stepper * stepper, uint32_t speed){
 	stepper->Timer->Instance->CCR1=1000000/(2*speed);
 	//set timer period
 	stepper->Timer->Instance->ARR=(1000000/speed)-1;
+}
+
+void setDefaultSpeed(stepper * stepper, uint32_t zeroSpeed, uint32_t tattooSpeed, uint32_t scanSpeed){
+	stepper->PPS_ZeroDefault;
+	stepper->PPS_TattooDefault;
+	stepper->PPS_ScanDefault;
+
 }
 
 //set direction

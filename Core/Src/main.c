@@ -28,6 +28,7 @@
 #include "hx711.h"
 #include "serialFromPC.h"
 #include "zeroing.h"
+#include "modeSelect.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,9 @@ TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
+
+//Mode Control
+RTP_STATUS mode;
 
 //Stepper Control
 
@@ -817,6 +821,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(state1LED_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : modeStandby_Pin modeZero_Pin modeTattoo_Pin modeScan_Pin */
+  GPIO_InitStruct.Pin = modeStandby_Pin|modeZero_Pin|modeTattoo_Pin|modeScan_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);

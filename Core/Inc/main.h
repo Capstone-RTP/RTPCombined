@@ -84,6 +84,14 @@ void Error_Handler(void);
 #define tofXSHUT_GPIO_Port GPIOD
 #define state1LED_Pin GPIO_PIN_7
 #define state1LED_GPIO_Port GPIOC
+#define modeStandby_Pin GPIO_PIN_4
+#define modeStandby_GPIO_Port GPIOD
+#define modeZero_Pin GPIO_PIN_5
+#define modeZero_GPIO_Port GPIOD
+#define modeTattoo_Pin GPIO_PIN_6
+#define modeTattoo_GPIO_Port GPIOD
+#define modeScan_Pin GPIO_PIN_7
+#define modeScan_GPIO_Port GPIOD
 #define state2LED_Pin GPIO_PIN_7
 #define state2LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
