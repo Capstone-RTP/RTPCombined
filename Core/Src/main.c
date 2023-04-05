@@ -28,6 +28,7 @@
 #include "hx711.h"
 #include "serialFromPC.h"
 #include "zeroing.h"
+#include "pid.h"
 
 /* USER CODE END Includes */
 
@@ -64,8 +65,11 @@ stepper yMotor;
 stepper rMotor;
 char doOnceFlag=0;
 
-enum scanStates {posReceive, goToPos,distGet};
+enum scanStates {posReceive,goToPos,distGet};
 enum scanStates scanState;
+
+enum tattooStates {posReceiveTat,goToPosTat,travellingTat};
+enum tattooStates tattooState;
 
 // Serial print
 
@@ -77,13 +81,31 @@ VL53L0X_Dev_t  vl53l0x_c; // center module
 VL53L0X_DEV    Dev = &vl53l0x_c;
 
 uint32_t timer;
+uint32_t pidTimer;
 
-//Load cell
+//Load Cell Values
+hx711_t loadCell;
+uint32_t pressureZero;
+uint32_t filteredPressure;
+double pressureVal;
+int64_t pressureValInt;
+double setPoint;
+//PID Values
+PID_TypeDef pressPID;
+double deltaR = 0;
+
+typedef struct{
+	uint64_t outputSum;
+	uint8_t index;
+	u_int32_t values[5];
+
+} movingAverageFilter;
 
 //Data Transfer
 uint8_t rxBuffer[16];
 uint8_t uartRecievedFlag = 0;
 Instruction nextInstr;
+uint16_t lastRInstruct = 0;
 
 /* USER CODE END PV */
 
@@ -102,6 +124,25 @@ static void MX_TIM5_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint32_t movingAverage(movingAverageFilter *filter, int newVal){
+	//Function Variables
+	uint8_t lastValIndex;
+	uint8_t filterSize;
+	uint32_t lastVal;
+	uint32_t average;
+	filterSize = sizeof(filter->values)/sizeof(filter->values[0]);
+	//Find last value in circular buffer
+	lastValIndex = (filter->index+1)%filterSize;
+	lastVal = filter->values[lastValIndex];
+	//calculate new sum and output average
+	filter->outputSum = filter->outputSum-lastVal+newVal;
+	average = filter->outputSum/filterSize;
+	//Update index and replace
+	filter->values[lastValIndex] = newVal;
+	filter->index = lastValIndex;
+
+	return average;
+}
 
 /* USER CODE END 0 */
 
@@ -129,6 +170,7 @@ int main(void)
   /* USER CODE BEGIN Init */
 
 	InitSerialFromPC(&hlpuart1,rxBuffer);
+	movingAverageFilter pressureMAF = {0};
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -156,6 +198,7 @@ int main(void)
 	initStepper(&thetaMotor, &htim3, TIM_CHANNEL_1, thetaDir_GPIO_Port, thetaDir_Pin, 400);
 	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 400);
 	initStepper(&rMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 400);
+
 	yMotor.PPS_ZeroDefault = 200;
 	thetaMotor.PPS_ZeroDefault = 200;
 	rMotor.PPS_ZeroDefault = 200;
@@ -186,20 +229,22 @@ int main(void)
 	HAL_UART_Receive_IT(&hlpuart1, rxBuffer, 6); //receive 6 bytes
 
 	//Start timer for uSDelay for HX711
-
-
-
 	HAL_TIM_Base_Start(&htim5);
-
+	//Init load cell
+	hx711_init(&loadCell, loadCLK_GPIO_Port, loadCLK_Pin, loadDATA_GPIO_Port, loadDATA_Pin, &htim5);
 	HAL_Delay(1000);
+	pressureZero = hx711_value_ave(&loadCell, 10);
 //	setTarget(&thetaMotor, 1000, 1);
 //	setTarget(&yMotor, 800, 1);
 //	setTarget(&rMotor,500,1);
 
-	//Init load cell
+	//PID Setup
+	setPoint = 17000;
+	PID(&pressPID, &pressureVal, &deltaR, &setPoint, 0.01, 0, 0, _PID_P_ON_E, _PID_CD_DIRECT);
+	PID_SetMode(&pressPID, _PID_MODE_AUTOMATIC);
+	PID_SetSampleTime(&pressPID, 100);
+	PID_SetOutputLimits(&pressPID, -200, 200);
 
-	//	uint32_t pressureVal;
-	//	uint32_t pressureZero;
 	//
 	//	MessageLen = sprintf((char*)Message, "Here 1 \n\r");
 	//	HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
@@ -208,13 +253,11 @@ int main(void)
 	//		MessageLen = sprintf((char*)Message, "Here 2 \n\r");
 	//		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 
-	//	HAL_Delay(200);
-	//	pressureZero = hx711_value_ave(&loadCell, 5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	timer = HAL_GetTick();
+	//timer = HAL_GetTick();
 
 	//testing stopping function
 	//	GoHome(&thetaMotor);
@@ -243,53 +286,94 @@ int main(void)
 		//			HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 		//		}
 
-		//check if data has been received
-		if(scanState == posReceive && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
-					HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, SET);
-					if(uartRecievedFlag){
-						//retrieve instructions
-						ParseInstructions(rxBuffer, &nextInstr);
-						//enable receive interrupt
-						uartRecievedFlag = 0;
-						HAL_UART_Receive_IT(&hlpuart1, rxBuffer, 6);
-						HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, RESET);
-						scanState = goToPos;
-					}
-				}
-				else if(scanState == goToPos && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
-					//HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, SET);
-					//Increment theta based on direction
-					if(nextInstr.th>=thetaMotor.TargetPosition){
-						setTarget(&thetaMotor, (uint64_t)abs(nextInstr.th - thetaMotor.TargetPosition), 1);
-					}
-					else{
-						setTarget(&thetaMotor, (uint64_t)abs(nextInstr.th - thetaMotor.TargetPosition), 0);
-					}
-					//Increment Y based on direction
-					if(nextInstr.y >= yMotor.TargetPosition){
-						setTarget(&yMotor, (uint64_t)abs(nextInstr.y - yMotor.TargetPosition), 1);
-					}
-					else{
-						setTarget(&yMotor, (uint64_t)abs(nextInstr.y - yMotor.TargetPosition), 0);
-					}
-					//HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, RESET);
-					scanState = distGet;
-				}
-				else if(scanState == distGet && (yMotor.Status != Stopped || thetaMotor.Status != Stopped)){
-					HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, SET);
-					timer = HAL_GetTick();
-				}
-				else if(scanState == distGet && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
-					HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, RESET);
-					HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, SET);
-					VL53L0X_PerformSingleRangingMeasurement(Dev, &RangingData);
-					if(RangingData.RangeStatus == 0){
-						SendSerialInt(RangingData.RangeMilliMeter);
-						timer = HAL_GetTick()-timer;
-						HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, RESET);
-						scanState = posReceive;
-					}
-				}
+//		//Scanning Sequence
+//		//check if data has been received
+//		if(scanState == posReceive && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+//			HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, SET);
+//			if(uartRecievedFlag){
+//				//retrieve instructions
+//				ParseInstructions(rxBuffer, &nextInstr);
+//				//enable receive interrupt
+//				uartRecievedFlag = 0;
+//				HAL_UART_Receive_IT(&hlpuart1, rxBuffer, 6);
+//				HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, RESET);
+//				scanState = goToPos;
+//			}
+//		}
+//		else if(scanState == goToPos && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+//			//HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, SET);
+//			//Increment theta based on direction
+//			if(nextInstr.th>=thetaMotor.TargetPosition){
+//				setTarget(&thetaMotor, (uint64_t)abs(nextInstr.th - thetaMotor.TargetPosition), 1);
+//			}
+//			else{
+//				setTarget(&thetaMotor, (uint64_t)abs(nextInstr.th - thetaMotor.TargetPosition), 0);
+//			}
+//			//Increment Y based on direction
+//			if(nextInstr.y >= yMotor.TargetPosition){
+//				setTarget(&yMotor, (uint64_t)abs(nextInstr.y - yMotor.TargetPosition), 1);
+//			}
+//			else{
+//				setTarget(&yMotor, (uint64_t)abs(nextInstr.y - yMotor.TargetPosition), 0);
+//			}
+//			//HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, RESET);
+//			scanState = distGet;
+//		}
+//		else if(scanState == distGet && (yMotor.Status != Stopped || thetaMotor.Status != Stopped)){
+//			HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, SET);
+//			timer = HAL_GetTick();
+//		}
+//		else if(scanState == distGet && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+//			HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, RESET);
+//			HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, SET);
+//			VL53L0X_PerformSingleRangingMeasurement(Dev, &RangingData);
+//			if(RangingData.RangeStatus == 0){
+//				SendSerialInt(RangingData.RangeMilliMeter);
+//				timer = HAL_GetTick()-timer;
+//				HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, RESET);
+//				scanState = posReceive;
+//			}
+//		}
+
+		//Tattooing sequence
+		if(tattooState == posReceiveTat && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+			HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, SET);
+			if(uartRecievedFlag){
+				//retrieve instructions
+				ParseInstructions(rxBuffer, &nextInstr);
+				//enable receive interrupt
+				uartRecievedFlag = 0;
+				HAL_UART_Receive_IT(&hlpuart1, rxBuffer, 6);
+				HAL_GPIO_WritePin(state2LED_GPIO_Port, state2LED_Pin, RESET);
+				tattooState = goToPosTat ;
+			}
+		}
+		if(tattooState == goToPosTat && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+			HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, SET);
+			//Increment theta based on direction
+			if(nextInstr.th>=thetaMotor.TargetPosition){
+				setTarget(&thetaMotor, (uint64_t)abs(nextInstr.th - thetaMotor.TargetPosition), 1);
+			}
+			else{
+				setTarget(&thetaMotor, (uint64_t)abs(nextInstr.th - thetaMotor.TargetPosition), 0);
+			}
+			//Increment Y based on direction
+			if(nextInstr.y >= yMotor.TargetPosition){
+				setTarget(&yMotor, (uint64_t)abs(nextInstr.y - yMotor.TargetPosition), 1);
+			}
+			else{
+				setTarget(&yMotor, (uint64_t)abs(nextInstr.y - yMotor.TargetPosition), 0);
+			}
+			tattooState = travellingTat;
+		}
+		if(tattooState == travellingTat && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+			HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, RESET);
+			SendSerialChar('a');
+			tattooState = posReceiveTat;
+		}
+
+
+
 
 		//		if(uartRecievedFlag  && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
 		//			//retrieve instructions
