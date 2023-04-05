@@ -7158,8 +7158,7 @@ static void TIM_OC3_SetConfig(TIM_TypeDef *TIMx, const TIM_OC_InitTypeDef *OC_Co
   tmpccmrx &= ~TIM_CCMR2_OC3M;
   tmpccmrx &= ~TIM_CCMR2_CC3S;
   /* Select the Output Compare Mode */
-  tmpccmrx |= OC_Config
-		  ->OCMode;
+  tmpccmrx |= OC_Config->OCMode;
 
   /* Reset the Output Polarity level */
   tmpccer &= ~TIM_CCER_CC3P;
