@@ -50,7 +50,6 @@ I2C_HandleTypeDef hi2c2;
 
 UART_HandleTypeDef hlpuart1;
 
-TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
@@ -97,7 +96,6 @@ static void MX_LPUART1_UART_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
-static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -130,14 +128,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-	//Initialize stepper structures
-	initStepper(&thetaMotor, &htim3, TIM_CHANNEL_1, thetaDir_GPIO_Port, thetaDir_Pin, 33);
-	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 400);
-	initStepper(&rMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 400);
-	yMotor.PPS_ZeroDefault = 200;
-	thetaMotor.PPS_ZeroDefault = 200;
-	rMotor.PPS_ZeroDefault = 200;
-
 	InitSerialFromPC(&hlpuart1,rxBuffer);
   /* USER CODE END Init */
 
@@ -156,12 +146,19 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
-  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+
 	//Enable Timer Interrupts
 	__HAL_TIM_ENABLE_IT(&htim3, TIM_IT_UPDATE);
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
 	__HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
+	//Initialize stepper structures
+	initStepper(&thetaMotor, &htim3, TIM_CHANNEL_1, thetaDir_GPIO_Port, thetaDir_Pin, 400);
+	initStepper(&yMotor,&htim2,TIM_CHANNEL_1,yDir_GPIO_Port,yDir_Pin, 400);
+	initStepper(&rMotor, &htim4, TIM_CHANNEL_3, rDir_GPIO_Port, rDir_Pin, 400);
+	yMotor.PPS_ZeroDefault = 200;
+	thetaMotor.PPS_ZeroDefault = 200;
+	rMotor.PPS_ZeroDefault = 200;
 
 	Dev->I2cHandle = &hi2c2;
 	Dev->I2cDevAddr = 0x52;
@@ -189,12 +186,15 @@ int main(void)
 	HAL_UART_Receive_IT(&hlpuart1, rxBuffer, 6); //receive 6 bytes
 
 	//Start timer for uSDelay for HX711
+
+
+
 	HAL_TIM_Base_Start(&htim5);
 
 	HAL_Delay(1000);
 //	setTarget(&thetaMotor, 1000, 1);
-//			setTarget(&yMotor, 800, 1);
-//			setTarget(&rMotor,500,1);
+//	setTarget(&yMotor, 800, 1);
+//	setTarget(&rMotor,500,1);
 
 	//Init load cell
 
@@ -217,16 +217,12 @@ int main(void)
 	timer = HAL_GetTick();
 
 	//testing stopping function
-	GoHome(&thetaMotor);
-	HAL_Delay(10000);
-	GoHome(&yMotor);
-	HAL_Delay(10000);
-	GoHome(&rMotor);
-	HAL_Delay(10000);
-	//setTarget(&yMotor, 1000, 1);
-	//HAL_Delay(3000);
-	//setTarget(&yMotor, 500, 0);
-
+	//	GoHome(&thetaMotor);
+	//	HAL_Delay(10000);
+	//	GoHome(&yMotor);
+	//	HAL_Delay(10000);
+	//	GoHome(&rMotor);
+	//	HAL_Delay(10000);
 
 	while (1)
 	{
@@ -246,11 +242,9 @@ int main(void)
 		//			MessageLen = sprintf((char*)Message, "calcTime: %i\n\r",(int)(HAL_GetTick()-timer));
 		//			HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 		//		}
+
 		//check if data has been received
-
-
-
-				/*if(scanState == posReceive && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
+		if(scanState == posReceive && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
 					HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, SET);
 					if(uartRecievedFlag){
 						//retrieve instructions
@@ -295,7 +289,7 @@ int main(void)
 						HAL_GPIO_WritePin(state3LED_GPIO_Port, state3LED_Pin, RESET);
 						scanState = posReceive;
 					}
-				}*/
+				}
 
 		//		if(uartRecievedFlag  && yMotor.Status == Stopped && thetaMotor.Status == Stopped){
 		//			//retrieve instructions
@@ -310,18 +304,18 @@ int main(void)
 		//			}
 		//		}
 
-//		if((HAL_GetTick()-timer)>5000 && !doOnceFlag){
-//			//setTarget(&thetaMotor, 1000, 0);
-////								setTarget(&yMotor, 800, 0);
-////								setTarget(&rMotor,500,0);
+//		if((HAL_GetTick()-timer)>15000 && !doOnceFlag){
+////			setTarget(&thetaMotor, 1000, 0);
+////		setTarget(&yMotor, 800, 0);
+////			setTarget(&rMotor,500,0);
 //			doOnceFlag = 1;
 //		}
-		//
-		//		MessageLen = sprintf((char*)Message, " Current: %d ",(int)(thetaMotor.CurrentPosition));
-		//		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
-		//
-		//		MessageLen = sprintf((char*)Message, "Target: %d\n\r ",(int)(thetaMotor.TargetPosition));
-		//		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+
+//			MessageLen = sprintf((char*)Message, " Current: %d ",(int)(thetaMotor.CurrentPosition));
+//			HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
+//
+//			MessageLen = sprintf((char*)Message, "Target: %d\n\r ",(int)(thetaMotor.TargetPosition));
+//			HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
 
 
 		//HAL_Delay(100);
@@ -475,53 +469,6 @@ static void MX_LPUART1_UART_Init(void)
   /* USER CODE BEGIN LPUART1_Init 2 */
 
   /* USER CODE END LPUART1_Init 2 */
-
-}
-
-/**
-  * @brief TIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM1_Init(void)
-{
-
-  /* USER CODE BEGIN TIM1_Init 0 */
-
-  /* USER CODE END TIM1_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM1_Init 1 */
-
-  /* USER CODE END TIM1_Init 1 */
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM1_Init 2 */
-
-  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -688,7 +635,7 @@ static void MX_TIM4_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 500;
+  sConfigOC.Pulse = 200;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
@@ -773,7 +720,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, state3LED_Pin|state2LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, loadCLK_Pin|tofXSHUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(loadCLK_GPIO_Port, loadCLK_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, GPIO_PIN_RESET);
@@ -798,12 +745,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : loadCLK_Pin tofXSHUT_Pin */
-  GPIO_InitStruct.Pin = loadCLK_Pin|tofXSHUT_Pin;
+  /*Configure GPIO pin : loadCLK_Pin */
+  GPIO_InitStruct.Pin = loadCLK_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  HAL_GPIO_Init(loadCLK_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : loadDATA_Pin */
   GPIO_InitStruct.Pin = loadDATA_Pin;
@@ -827,7 +774,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void  HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
 	//Theta Motor interrupts
-	if(htim == &htim3){
+	if(htim == thetaMotor.Timer){
 		if(thetaMotor.Status == RunningForward){
 			thetaMotor.CurrentPosition++;
 		}
@@ -835,13 +782,13 @@ void  HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
 			thetaMotor.CurrentPosition--;
 		}
 		if(thetaMotor.CurrentPosition == thetaMotor.TargetPosition){
-			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
-			HAL_TIM_Base_Stop(&htim3);
+			HAL_TIM_PWM_Stop(thetaMotor.Timer, thetaMotor.Channel);
+			HAL_TIM_Base_Stop(thetaMotor.Timer);
 			thetaMotor.Status = Stopped;
 		}
 	}
 	//yMotor Interrupts
-	if(htim == &htim2){
+	if(htim == yMotor.Timer){
 		if(yMotor.Status == RunningForward){
 			yMotor.CurrentPosition++;
 		}
@@ -849,13 +796,13 @@ void  HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
 			yMotor.CurrentPosition--;
 		}
 		if(yMotor.CurrentPosition == yMotor.TargetPosition){
-			HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
-			HAL_TIM_Base_Stop(&htim2);
+			HAL_TIM_PWM_Stop(yMotor.Timer, yMotor.Channel);
+			HAL_TIM_Base_Stop(yMotor.Timer);
 			yMotor.Status = Stopped;
 		}
 	}
 	//rMotor Interrupts
-	if(htim == &htim4){
+	if(htim == rMotor.Timer){
 		if(rMotor.Status == RunningForward){
 			rMotor.CurrentPosition++;
 		}
@@ -863,10 +810,11 @@ void  HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
 			rMotor.CurrentPosition--;
 		}
 		if(rMotor.CurrentPosition == rMotor.TargetPosition){
-			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
-			HAL_TIM_Base_Stop(&htim4);
+			HAL_TIM_PWM_Stop(rMotor.Timer, rMotor.Channel);
+			HAL_TIM_Base_Stop(rMotor.Timer);
 			rMotor.Status = Stopped;
 		}
+
 	}
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)

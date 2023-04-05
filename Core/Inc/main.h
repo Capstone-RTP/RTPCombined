@@ -80,8 +80,6 @@ void Error_Handler(void);
 #define loadCLK_GPIO_Port GPIOD
 #define loadDATA_Pin GPIO_PIN_9
 #define loadDATA_GPIO_Port GPIOD
-#define tofXSHUT_Pin GPIO_PIN_15
-#define tofXSHUT_GPIO_Port GPIOD
 #define state1LED_Pin GPIO_PIN_7
 #define state1LED_GPIO_Port GPIOC
 #define state2LED_Pin GPIO_PIN_7

@@ -44,7 +44,25 @@ void setSpeed (stepper * stepper, uint32_t speed){
 	//update pulse rate of stepper
 	stepper->PPS = speed;
 	//set duty cycle
-	stepper->Timer->Instance->CCR1=1000000/(2*speed);
+	switch(stepper->Channel){
+		case TIM_CHANNEL_1:{
+			stepper->Timer->Instance->CCR1=1000000/(2*speed);
+			break;
+		}
+		case TIM_CHANNEL_2:{
+			stepper->Timer->Instance->CCR2=1000000/(2*speed);
+			break;
+		}
+		case TIM_CHANNEL_3:{
+			stepper->Timer->Instance->CCR3=1000000/(2*speed);
+			break;
+		}
+		case TIM_CHANNEL_4:{
+			stepper->Timer->Instance->CCR4=1000000/(2*speed);
+			break;
+		}
+	}
+
 	//set timer period
 	stepper->Timer->Instance->ARR=(1000000/speed)-1;
 }
