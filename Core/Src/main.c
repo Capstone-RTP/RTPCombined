@@ -29,6 +29,7 @@
 #include "serialFromPC.h"
 #include "zeroing.h"
 #include "pid.h"
+#include "modeSelect.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,12 @@ TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
+
+//Mode Control
+
+RTP_MODE rtpMode;
+ZERO_MODE zeroMode;
+uint8_t modeChangeFlag;
 
 //Stepper Control
 
@@ -144,6 +151,52 @@ uint32_t movingAverage(movingAverageFilter *filter, int newVal){
 	return average;
 }
 
+void modeSwitch(RTP_MODE mode){
+	rtpMode = mode;
+
+	//reset sub FSMs
+	zeroMode = 0;
+
+	//adjust LED config and motor speed
+	switch(mode){
+	case RTP_STANDBY:
+		//write to LED
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 0);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 0);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
+		break;
+	case RTP_ZERO:
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 0);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 1);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 0);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
+		setSpeed(&rMotor, rMotor.PPS_ZeroDefault);
+		setSpeed(&thetaMotor, thetaMotor.PPS_ZeroDefault);
+		setSpeed(&yMotor, yMotor.PPS_ZeroDefault);
+		break;
+	case RTP_TATTOO:
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 0);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 0);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 1);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
+		setSpeed(&rMotor, rMotor.PPS_TattooDefault);
+		setSpeed(&thetaMotor, thetaMotor.PPS_TattooDefault);
+		setSpeed(&yMotor, yMotor.PPS_TattooDefault);
+		break;
+	case RTP_SCAN:
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 1);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 1);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
+		setSpeed(&rMotor, rMotor.PPS_ScanDefault);
+		setSpeed(&thetaMotor, thetaMotor.PPS_ScanDefault);
+		setSpeed(&yMotor, yMotor.PPS_ScanDefault);
+		break;
+	}
+
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -171,6 +224,8 @@ int main(void)
 
 	InitSerialFromPC(&hlpuart1,rxBuffer);
 	movingAverageFilter pressureMAF = {0};
+
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -266,9 +321,61 @@ int main(void)
 	//	HAL_Delay(10000);
 	//	GoHome(&rMotor);
 	//	HAL_Delay(10000);
+	timer = HAL_GetTick();
+	modeSwitch(RTP_STANDBY);
+	//HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
 
 	while (1)
 	{
+		/*** STANDBY MODE ***/
+		if(rtpMode == RTP_STANDBY){
+
+		}
+
+		/*** ZEROING MODE ***/
+		else if(rtpMode == RTP_ZERO){
+			//zeroing FSM
+			switch(zeroMode){
+			case 0:
+				GoHome(&rMotor);
+				zeroMode++;
+				break;
+			case 1:
+				if(rMotor.Status == Stopped) zeroMode++;
+				break;
+			case 2:
+				GoHome(&thetaMotor);
+				zeroMode++;
+				break;
+			case 3:
+				if(thetaMotor.Status == Stopped) zeroMode++;
+				break;
+			case 4:
+				GoHome(&yMotor);
+				zeroMode++;
+				break;
+			case 5:
+				if(yMotor.Status == Stopped) zeroMode++;
+				break;
+			case 6:
+				zeroMode = 0;
+				modeSwitch(RTP_STANDBY);
+				break;
+			}
+
+		}
+
+		/*** TATTOO MODE ***/
+		else if(rtpMode == RTP_TATTOO){
+
+		}
+
+		/*** SCAN MODE ***/
+		else if(rtpMode == RTP_SCAN){
+
+		}
+
+
 		//		HAL_Delay(100);
 		//		MessageLen = sprintf((char*)Message, "Current Position: %d Target: %d \n\r",(int)yMotor.CurrentPosition,(int)yMotor.TargetPosition);
 		//		HAL_UART_Transmit(&hlpuart1, Message, MessageLen, 100);
@@ -801,6 +908,12 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, thetaDir_Pin|yDir_Pin|rDir_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOF, statusLed4_Pin|statusLed1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, statusLed2_Pin|statusLed3_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, state3LED_Pin|state2LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -815,6 +928,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : statusLed4_Pin statusLed1_Pin */
+  GPIO_InitStruct.Pin = statusLed4_Pin|statusLed1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : statusLed2_Pin statusLed3_Pin */
+  GPIO_InitStruct.Pin = statusLed2_Pin|statusLed3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : thLim_Pin yLim_Pin rLim_Pin */
   GPIO_InitStruct.Pin = thLim_Pin|yLim_Pin|rLim_Pin;
@@ -849,7 +976,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(state1LED_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : modeStandby_Pin modeZero_Pin modeTattoo_Pin modeScan_Pin */
+  GPIO_InitStruct.Pin = modeStandby_Pin|modeZero_Pin|modeTattoo_Pin|modeScan_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -909,17 +1051,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
-	//check which limit switch was hit
-	if(GPIO_Pin == rLim_Pin){
+	switch(GPIO_Pin){
+	//limit switches
+	case rLim_Pin:
 		zeroStepper(&rMotor);
-	}
-	else if(GPIO_Pin == thLim_Pin){
+		break;
+	case thLim_Pin:
 		zeroStepper(&thetaMotor);
-	}
-	else if(GPIO_Pin == yLim_Pin){
+		break;
+	case yLim_Pin:
 		zeroStepper(&yMotor);
+		break;
+	//mode pushbuttons
+	case modeStandby_Pin:
+		modeSwitch(RTP_STANDBY);
+		break;
+	case modeZero_Pin:
+		modeSwitch(RTP_ZERO);
+		break;
+	case modeTattoo_Pin:
+		modeSwitch(RTP_TATTOO);
+		break;
+	case modeScan_Pin:
+		modeSwitch(RTP_SCAN);
+		break;
 	}
-
 
 }
 

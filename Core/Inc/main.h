@@ -65,6 +65,14 @@ void Error_Handler(void);
 #define yDir_GPIO_Port GPIOA
 #define rDir_Pin GPIO_PIN_7
 #define rDir_GPIO_Port GPIOA
+#define statusLed4_Pin GPIO_PIN_11
+#define statusLed4_GPIO_Port GPIOF
+#define statusLed1_Pin GPIO_PIN_13
+#define statusLed1_GPIO_Port GPIOF
+#define statusLed2_Pin GPIO_PIN_9
+#define statusLed2_GPIO_Port GPIOE
+#define statusLed3_Pin GPIO_PIN_11
+#define statusLed3_GPIO_Port GPIOE
 #define thLim_Pin GPIO_PIN_12
 #define thLim_GPIO_Port GPIOE
 #define thLim_EXTI_IRQn EXTI15_10_IRQn
@@ -82,6 +90,18 @@ void Error_Handler(void);
 #define loadDATA_GPIO_Port GPIOD
 #define state1LED_Pin GPIO_PIN_7
 #define state1LED_GPIO_Port GPIOC
+#define modeStandby_Pin GPIO_PIN_3
+#define modeStandby_GPIO_Port GPIOD
+#define modeStandby_EXTI_IRQn EXTI3_IRQn
+#define modeZero_Pin GPIO_PIN_4
+#define modeZero_GPIO_Port GPIOD
+#define modeZero_EXTI_IRQn EXTI4_IRQn
+#define modeTattoo_Pin GPIO_PIN_5
+#define modeTattoo_GPIO_Port GPIOD
+#define modeTattoo_EXTI_IRQn EXTI9_5_IRQn
+#define modeScan_Pin GPIO_PIN_6
+#define modeScan_GPIO_Port GPIOD
+#define modeScan_EXTI_IRQn EXTI9_5_IRQn
 #define state2LED_Pin GPIO_PIN_7
 #define state2LED_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
