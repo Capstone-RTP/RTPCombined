@@ -113,7 +113,7 @@ static void MX_TIM1_Init(void);
 /* USER CODE BEGIN 0 */
 
 void modeSwitch(RTP_MODE mode){
-	uint8_t ledConfig;
+	rtpMode = mode;
 
 	//reset sub FSMs
 	zeroMode = 0;
@@ -121,34 +121,40 @@ void modeSwitch(RTP_MODE mode){
 	//adjust LED config and motor speed
 	switch(mode){
 	case RTP_STANDBY:
-		ledConfig = LED_CONFIG_1;
+		//write to LED
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 0);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 0);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
 		break;
 	case RTP_ZERO:
-		ledConfig = LED_CONFIG_2;
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 0);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 1);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 0);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
 		setSpeed(&rMotor, rMotor.PPS_ZeroDefault);
 		setSpeed(&thetaMotor, thetaMotor.PPS_ZeroDefault);
 		setSpeed(&yMotor, yMotor.PPS_ZeroDefault);
 		break;
 	case RTP_TATTOO:
-		ledConfig = LED_CONFIG_3;
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 0);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 0);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 1);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
 		setSpeed(&rMotor, rMotor.PPS_TattooDefault);
 		setSpeed(&thetaMotor, thetaMotor.PPS_TattooDefault);
 		setSpeed(&yMotor, yMotor.PPS_TattooDefault);
 		break;
 	case RTP_SCAN:
-		ledConfig = LED_CONFIG_4;
+		HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
+		HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, 1);
+		HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, 1);
+		HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, 0);
 		setSpeed(&rMotor, rMotor.PPS_ScanDefault);
 		setSpeed(&thetaMotor, thetaMotor.PPS_ScanDefault);
 		setSpeed(&yMotor, yMotor.PPS_ScanDefault);
 		break;
 	}
-
-	//write to LED
-	HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, (ledConfig >> 0) & 1);
-	HAL_GPIO_WritePin(statusLed2_GPIO_Port, statusLed2_Pin, (ledConfig >> 1) & 1);
-	HAL_GPIO_WritePin(statusLed3_GPIO_Port, statusLed3_Pin, (ledConfig >> 2) & 1);
-	HAL_GPIO_WritePin(statusLed4_GPIO_Port, statusLed4_Pin, (ledConfig >> 3) & 1);
-
 
 }
 
@@ -186,6 +192,8 @@ int main(void)
 	rMotor.PPS_ZeroDefault = 200;
 
 	InitSerialFromPC(&hlpuart1,rxBuffer);
+
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -262,6 +270,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	timer = HAL_GetTick();
+	modeSwitch(RTP_STANDBY);
+	//HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
 
 	while (1)
 	{
@@ -851,10 +861,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, statusLed1_Pin|statusLed2_Pin|statusLed3_Pin|statusLed4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, thetaDir_Pin|yDir_Pin|rDir_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, thetaDir_Pin|yDir_Pin|rDir_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, statusLed4_Pin|statusLed1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, statusLed2_Pin|statusLed3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, state3LED_Pin|state2LED_Pin, GPIO_PIN_RESET);
@@ -865,19 +878,26 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(state1LED_GPIO_Port, state1LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : statusLed1_Pin statusLed2_Pin statusLed3_Pin statusLed4_Pin */
-  GPIO_InitStruct.Pin = statusLed1_Pin|statusLed2_Pin|statusLed3_Pin|statusLed4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
   /*Configure GPIO pins : thetaDir_Pin yDir_Pin rDir_Pin */
   GPIO_InitStruct.Pin = thetaDir_Pin|yDir_Pin|rDir_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : statusLed4_Pin statusLed1_Pin */
+  GPIO_InitStruct.Pin = statusLed4_Pin|statusLed1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : statusLed2_Pin statusLed3_Pin */
+  GPIO_InitStruct.Pin = statusLed2_Pin|statusLed3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : thLim_Pin yLim_Pin rLim_Pin */
   GPIO_InitStruct.Pin = thLim_Pin|yLim_Pin|rLim_Pin;
@@ -914,11 +934,20 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : modeStandby_Pin modeZero_Pin modeTattoo_Pin modeScan_Pin */
   GPIO_InitStruct.Pin = modeStandby_Pin|modeZero_Pin|modeTattoo_Pin|modeScan_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
