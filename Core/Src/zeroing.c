@@ -20,3 +20,11 @@ void GoHome(stepper* motor){
 	setTarget(motor, 0xFFFE,0);
 }
 
+void GoHomeR(stepper* motor){
+	stopStepper(motor);
+	//Note: make sure there is some mechanism in main()
+	//to stop otherwise this will go until it breaks something*/
+	setSpeed(motor,motor->PPS_ZeroDefault);
+	setTarget(motor, 0xFFFF,1); //go forward
+}
+

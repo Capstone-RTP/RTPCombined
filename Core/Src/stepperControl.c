@@ -16,6 +16,8 @@ void initStepper(stepper * stepper, TIM_HandleTypeDef * tim, uint32_t  channel, 
 	setSpeed(stepper, stepper->PPS);
 	//return stepper structure pointer
 
+	stepper->LastZero = HAL_GetTick();
+
 	//set default speeds
 	stepper->PPS_ZeroDefault;
 	stepper->PPS_TattooDefault;
@@ -99,7 +101,27 @@ void stopStepper(stepper *stepper){
 }
 
 void zeroStepper(stepper *stepper){
-	stopStepper(stepper);
-	stepper->CurrentPosition = 0;
-	stepper->TargetPosition = 0;
+	uint32_t currentTime = HAL_GetTick();
+
+	//need this to debounce the limit switch
+	if(currentTime - stepper->LastZero > 100){
+		stopStepper(stepper);
+		stepper->CurrentPosition = 0;
+		stepper->TargetPosition = 0;
+		stepper->LastZero = currentTime;
+	}
+}
+
+//need this function because r limit switch is at other end
+void zeroStepperR(stepper *stepper){
+	uint32_t currentTime = HAL_GetTick();
+
+	if(currentTime - stepper->LastZero > 100){
+		stopStepper(stepper);
+		stepper->CurrentPosition = R_LIMIT_SWITCH_POS;
+		stepper->TargetPosition = R_LIMIT_SWITCH_POS;
+		//go to zero
+		setTarget(stepper,R_LIMIT_SWITCH_POS-300,0);
+		stepper->LastZero = currentTime;
+	}
 }

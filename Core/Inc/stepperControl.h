@@ -10,6 +10,9 @@
 #ifndef INC_STEPPERCONTROL_H_
 #define INC_STEPPERCONTROL_H_
 
+//constants
+#define R_LIMIT_SWITCH_POS 1051
+
 typedef enum {
 	RunningForward =1,
 	RunningBackward =2,
@@ -23,6 +26,8 @@ typedef struct {
 	uint32_t  Channel;
 	GPIO_TypeDef * DIRPort;
 	uint16_t DIRPin;
+
+	uint32_t LastZero;
 
 	//speed
 	volatile uint32_t PPS;
@@ -44,7 +49,7 @@ void setDefaultSpeed(stepper * stepper, uint32_t zeroSpeed, uint32_t tattooSpeed
 void setDirection(stepper *stepper);
 void stopStepper(stepper *stepper);
 void zeroStepper(stepper *stepper);
-
+void zeroStepperR(stepper *stepper);
 
 
 #endif /* INC_STEPPERCONTROL_H_ */

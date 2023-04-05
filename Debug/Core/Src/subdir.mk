@@ -46,7 +46,7 @@ C_DEPS += \
 
 # Each subdirectory must supply rules for building sources it contributes
 Core/Src/%.o Core/Src/%.su: ../Core/Src/%.c Core/Src/subdir.mk
-	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4P5xx -c -I"C:/Code/STM32/RTPCombined/Drivers/VL53L0X/core/inc" -I"C:/Code/STM32/RTPCombined/Drivers/VL53L0X/core/src" -I"C:/Code/STM32/RTPCombined/Drivers/VL53L0X/platform/inc" -I"C:/Code/STM32/RTPCombined/Drivers/VL53L0X/platform/src" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4P5xx -c -I"C:/Users/kylei/STM32CubeIDE/workspace1/RTPCombined/Drivers/VL53L0X/core/inc" -I"C:/Users/kylei/STM32CubeIDE/workspace1/RTPCombined/Drivers/VL53L0X/core/src" -I"C:/Users/kylei/STM32CubeIDE/workspace1/RTPCombined/Drivers/VL53L0X/platform/inc" -I"C:/Users/kylei/STM32CubeIDE/workspace1/RTPCombined/Drivers/VL53L0X/platform/src" -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
 
 clean: clean-Core-2f-Src
 

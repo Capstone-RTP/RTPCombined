@@ -331,21 +331,27 @@ int main(void)
 	//	HAL_Delay(10000);
 	timer = HAL_GetTick();
 	modeSwitch(RTP_STANDBY);
+	//GoHomeR(&rMotor);
+	//setTarget(&rMotor,100,1);
 	//HAL_GPIO_WritePin(statusLed1_GPIO_Port, statusLed1_Pin, 1);
 
 	while (1)
 	{
 		/*** STANDBY MODE ***/
 		if(rtpMode == RTP_STANDBY){
+			//stopStepper(&rMotor);
+			//stopStepper(&thetaMotor);
+			//stopStepper(&yMotor);
 
 		}
 
 		/*** ZEROING MODE ***/
 		else if(rtpMode == RTP_ZERO){
+
 			//zeroing FSM
 			switch(zeroMode){
 			case 0:
-				GoHome(&rMotor);
+				GoHomeR(&rMotor);
 				zeroMode++;
 				break;
 			case 1:
@@ -963,7 +969,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : thLim_Pin yLim_Pin rLim_Pin */
   GPIO_InitStruct.Pin = thLim_Pin|yLim_Pin|rLim_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
@@ -1072,7 +1078,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	switch(GPIO_Pin){
 	//limit switches
 	case rLim_Pin:
-		zeroStepper(&rMotor);
+		zeroStepperR(&rMotor);
 		break;
 	case thLim_Pin:
 		zeroStepper(&thetaMotor);
@@ -1086,12 +1092,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		break;
 	case modeZero_Pin:
 		modeSwitch(RTP_ZERO);
+		//add this for testing
 		break;
 	case modeTattoo_Pin:
-		modeSwitch(RTP_TATTOO);
+		//modeSwitch(RTP_TATTOO);
 		break;
 	case modeScan_Pin:
-		modeSwitch(RTP_SCAN);
+		//modeSwitch(RTP_SCAN);
 		break;
 	}
 

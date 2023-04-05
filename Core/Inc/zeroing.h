@@ -13,5 +13,6 @@
 
 //function prototypes
 void GoHome(stepper* motor);
+void GoHomeR(stepper* motor);
 
 #endif /* SRC_ZEROING_H_ */
